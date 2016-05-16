@@ -51,8 +51,11 @@ class Cart(object):
             products_queryset = self.get_queryset().filter(pk__in=ids_in_cart)
             for product in products_queryset:
                 item = cart_representation[str(product.pk)]
+                item.pop('product_pk')
+                quantity = item.pop('quantity')
+                price = Decimal(item.pop('price'))
                 self._items_dict[product.pk] = self.cart_item_class(
-                    product, item['quantity'], Decimal(item['price'])
+                    product, quantity, price, **item
                 )
 
     def __contains__(self, product):
@@ -86,7 +89,7 @@ class Cart(object):
         self.session[self.session_key] = self.cart_serializable
         self.session.modified = True
 
-    def add(self, product, price=None, quantity=1):
+    def add(self, product, price=None, quantity=1, **kwargs):
         """
         Adds or creates products in cart. For an existing product,
         the quantity is increased and the price is ignored.
@@ -100,7 +103,7 @@ class Cart(object):
             if price == None:
                 raise ValueError('Missing price when adding to cart')
             self._items_dict[product.pk] = self.cart_item_class(
-                    product, quantity, price)
+                    product, quantity, price, **kwargs)
         self.update_session()
 
     def remove(self, product):
